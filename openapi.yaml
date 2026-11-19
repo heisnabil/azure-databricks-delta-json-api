@@ -1,0 +1,186 @@
+openapi: 3.0.3
+info:
+  title: Databricks Delta Table API
+  version: 1.0.0
+  description: >
+    Read-only, cursor-paginated REST API that exposes one configured
+    Databricks Delta table. External callers authenticate with a dedicated
+    API key. Data is served from a pinned Delta snapshot for consistency.
+  contact:
+    name: API Owner
+servers:
+  - url: https://<function-app-name>.azurewebsites.net/api
+    description: Azure Functions production endpoint
+
+security:
+  - ApiKeyAuth: []
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Dedicated API key provided by the API owner.
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: UNAUTHORIZED
+            message:
+              type: string
+              example: A valid x-api-key header is required.
+            correlation_id:
+              type: string
+              format: uuid
+              example: "550e8400-e29b-41d4-a716-446655440000"
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        page:
+          type: integer
+          example: 1
+        page_size:
+          type: integer
+          example: 250
+        has_more:
+          type: boolean
+          example: true
+        data_as_of:
+          type: string
+          format: date-time
+          example: "2025-06-15T10:00:00Z"
+        source_table_version:
+          type: integer
+          example: 42
+        data:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          description: >
+            Array of records. Column names and types are dynamic and match
+            the source Delta table schema.
+        next_cursor:
+          type: string
+          nullable: true
+          description: >
+            Encrypted opaque cursor for the next page. Pass as the `cursor`
+            query parameter. Null when there are no more pages.
+
+    HealthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        status:
+          type: string
+          example: ok
+
+  parameters:
+    PageSize:
+      name: page_size
+      in: query
+      required: false
+      description: Number of records per page (default 250, max 1000).
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 1000
+        default: 250
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      description: >
+        Encrypted cursor from a previous response's `next_cursor` field.
+        Omit for the first page.
+      schema:
+        type: string
+
+paths:
+  /v1/health:
+    get:
+      security: []
+      summary: Liveness check
+      description: >
+        Returns API availability status. Does not probe Databricks
+        or wake the SQL warehouse. No authentication required.
+      operationId: healthCheck
+      responses:
+        '200':
+          description: API is running
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /v1/records:
+    get:
+      summary: Retrieve one page of table records
+      description: >
+        Returns a paginated page of records from the configured Delta table.
+        Each pagination session is pinned to a specific Delta version for
+        snapshot consistency. Use the `next_cursor` from the response to
+        fetch subsequent pages.
+      operationId: getRecords
+      parameters:
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Page successfully returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid pagination input (bad page_size or cursor)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '410':
+          description: Cursor expired or snapshot no longer available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Page exceeds response-size limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server configuration error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Data backend unavailable or source data stale
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

@@ -1,0 +1,4 @@
+azure-functions>=1.21,<2
+databricks-sql-connector[pyarrow]>=4.0.0,<5
+databricks-sdk>=0.18.0,<1.0.0
+cryptography>=44,<48

@@ -1,0 +1,28 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "FUNCTIONS_EXTENSION_VERSION": "~4",
+
+    "API_KEY_ACTIVE": "replace-with-generated-api-key",
+    "API_KEY_PREVIOUS": "",
+
+    "CURSOR_ENCRYPTION_KEY_ACTIVE": "replace-with-base64url-encoded-32-byte-key",
+    "CURSOR_ENCRYPTION_KEY_PREVIOUS": "",
+    "CURSOR_TTL_SECONDS": "86400",
+
+    "TABLE_FQN": "replace_catalog.replace_schema.replace_table",
+    "ORDER_KEY_COLUMNS": "replace_with_verified_unique_not_null_key",
+
+    "DATABRICKS_SERVER_HOSTNAME": "adb-<workspace-id>.<region>.azuredatabricks.net",
+    "DATABRICKS_HTTP_PATH": "/sql/1.0/warehouses/<warehouse-id>",
+    "DATABRICKS_CLIENT_ID": "<service-principal-application-id>",
+    "DATABRICKS_CLIENT_SECRET": "<local-only-secret>",
+
+    "MAX_PAGE_SIZE": "1000",
+    "MAX_RESPONSE_BYTES": "4194304",
+    "MAX_SOURCE_AGE_HOURS": "0",
+    "QUERY_TIMEOUT_SECONDS": "90"
+  }
+}

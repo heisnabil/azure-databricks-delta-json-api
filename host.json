@@ -1,0 +1,23 @@
+{
+  "version": "2.0",
+  "logging": {
+    "logLevel": {
+      "default": "Warning",
+      "Function": "Information",
+      "Host.Results": "Information",
+      "databricks_delta_api": "Information"
+    },
+    "applicationInsights": {
+      "samplingSettings": {
+        "isEnabled": true,
+        "excludedTypes": "Request"
+      }
+    }
+  },
+  "functionTimeout": "00:03:30",
+  "extensions": {
+    "http": {
+      "routePrefix": "api"
+    }
+  }
+}
